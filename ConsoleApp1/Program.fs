@@ -4,17 +4,24 @@ open System
 open System.Net
 open System
 open System.IO
+open System.Web
+
+let extractWebPageText (reader:IO.StreamReader) = 
+    reader.ReadToEnd()
 
 // Fetch the contents of a web page
-let fetchUrl callback url =        
-    let req = WebRequest.Create(Uri(url)) 
-    use resp = req.GetResponse() 
-    use stream = resp.GetResponseStream() 
-    use reader = new IO.StreamReader(stream) 
-    callback reader
+let fetchUrlReader callback url =        
+    try
+        let req = WebRequest.Create(Uri(url)) 
+        use resp = req.GetResponse() 
+        use stream = resp.GetResponseStream()
+        use reader = new IO.StreamReader(stream)
+        callback reader
+    with
+        | :? System.Net.WebException -> "#ERROR#"
 
-let handleWebPage (reader:IO.StreamReader) = 
-    reader.ReadToEnd()
+let fetchUrlText url = 
+    fetchUrlReader extractWebPageText url
 
 type personType = { forename : string ; surname : string ; dob : DateTime }
 
@@ -39,8 +46,8 @@ let main argv =
 
     let url = "https://www.ukclimbing.com/"
     Log.WriteMsg url
-    fetchUrl handleWebPage url |> Log.WriteMsg
-
+    fetchUrlText url |> Log.WriteMsg
+    
     Log.WriteMsg "Stopping"
 
     0 // return an integer exit code
